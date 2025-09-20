@@ -34,7 +34,7 @@ A= (B+n*P)/(1+n) # calculating the coordinate points of R which divides the join
 #print(R)
 
 #Generating all lines
-x_PB = line_gen(A,B)
+x_PB = line_gen(A,B  )
 
 #Plotting all lines
 plt.plot(x_PB[0,:],x_PB[1,:],label='$PB$')

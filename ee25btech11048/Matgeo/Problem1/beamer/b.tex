@@ -169,60 +169,71 @@ void findA(int xp, int yp, int xb, int yb, int *xa, int *ya) {
     *xa = 2*xp - xb;
     *ya = 2*yp - yb;
 }
-
-int main() {
-    int xp=0, yp=4;
-    int xb=-2, yb=3;
-    int xa, ya;
-    
-    findA(xp, yp, xb, yb, &xa, &ya);
-    
-    printf("Coordinates of A: (%d, %d)\n", xa, ya);
-    return 0;
-}
 \end{lstlisting}
 \end{frame}
 
 \begin{frame}[fragile]
 	\frametitle{Python Code through shared output}
 	\begin{lstlisting}
+import ctypes
+import numpy as np
 import matplotlib.pyplot as plt
 
-def findA(xp, yp, xb, yb):
-    xa = 2*xp - xb
-    ya = 2*yp - yb
-    return xa, ya
+# Load the compiled C library
+lib = ctypes.CDLL("./findA.so")
 
-
-xp, yp = 0, 4
-xb, yb = -2, 3
-
-xa, ya = findA(xp, yp, xb, yb)
-print(f"Coordinates of A: ({xa}, {ya})")
-
-
-plt.figure(figsize=(6,6))
-plt.scatter([xa, xb, xp], [ya, yb, yp], color=['red','blue','green'], s=100)
+# Define the function signature: void findA(int, int, int, int, int*, int*)
+lib.findA.argtypes = [
+    ctypes.c_int, ctypes.c_int,
+    ctypes.c_int, ctypes.c_int,
+    ctypes.POINTER(ctypes.c_int),
+    ctypes.POINTER(ctypes.c_int)
+]
+lib.findA.restype = None  # void
 \end{lstlisting}
 \end{frame}
 
 \begin{frame}[fragile]
+\frametitle{Python Code through shared output}
+\begin{lstlisting}
+def findA(xp, yp, xb, yb):
+    """Call the C function via ctypes."""
+    xa = ctypes.c_int()
+    ya = ctypes.c_int()
+    lib.findA(xp, yp, xb, yb, ctypes.byref(xa), ctypes.byref(ya))
+    return xa.value, ya.value
+    
+if __name__ == "__main__":
+    xp, yp = 3, 4
+    xb, yb = 1, 2
+
+    xa, ya = findA(xp, yp, xb, yb)
+    print(f"Coordinates of A (from C): ({xa}, {ya})")
+
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
 	\frametitle{Python Code through shared output}
 	\begin{lstlisting}
-plt.text(xa+0.1, ya, "A(2,5)", fontsize=12)
-plt.text(xb+0.1, yb, "B(-2,3)", fontsize=12)
-plt.text(xp+0.1, yp, "P(0,4)", fontsize=12)
+	# Plotting
+    plt.figure(figsize=(6, 6))
+    plt.plot(xp, yp, 'ro', label='P')
+    plt.plot(xb, yb, 'bo', label='B')
+    plt.plot(xa, ya, 'go', label='A')
+    plt.plot([xb, xa], [yb, ya], 'k--', label='Line BA')
 
+    plt.text(xp+0.1, yp+0.1, "P")
+    plt.text(xb+0.1, yb+0.1, "B")
+    plt.text(xa+0.1, ya+0.1, "A")
 
-plt.plot([xa, xb], [ya, yb], 'k--', label="AB")
-plt.scatter(xp, yp, color='green', s=120, marker='x', label="Midpoint P")
-
-plt.axhline(0, color='gray', linewidth=0.5)
-plt.axvline(0, color='gray', linewidth=0.5)
-plt.legend()
-plt.grid(True)
-plt.show()
-\end{lstlisting}
+    plt.axhline(0, color='black', linewidth=0.5)
+    plt.axvline(0, color='black', linewidth=0.5)
+    plt.grid(True)
+    plt.legend()
+    plt.title("Reflection of B across P (computed by C, plotted by Python)")
+    plt.show()
+	
+	\end{lstlisting}
 \end{frame}
 
 \begin{frame}[fragile]
